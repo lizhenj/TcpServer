@@ -2,7 +2,7 @@ package ziface
 
 import "net"
 
-//定义链接模块的抽象层
+// 定义链接模块的抽象层
 type IConnection interface {
 	//启动链接 开始当前链接的准备工作
 	Start()
@@ -21,7 +21,14 @@ type IConnection interface {
 
 	//发送数据， 将数据发送给远程的客户端
 	SendMsg(uint32, []byte) error
+
+	//设置链接属性
+	SetProperty(key string, value interface{})
+	//获取链接属性
+	GetProperty(key string) (interface{}, error)
+	//移除链接属性
+	RemoveProperty(key string)
 }
 
-//定义一个处理链接业务的方法
+// 定义一个处理链接业务的方法
 type HandleFunc func(*net.TCPConn, []byte, int) error

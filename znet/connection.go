@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"sync"
 	"zinx/utils"
 	"zinx/ziface"
 )
@@ -40,9 +41,15 @@ type Connection struct {
 
 	//消息的管理MsgID和对应的处理业务API关系
 	MsgHandler ziface.IMsgHandle
+
+	//链接属性集合
+	property map[string]interface{}
+
+	//保护链接属性的锁
+	propertyLock sync.RWMutex
 }
 
-//链接模块初始化方法
+// 链接模块初始化方法
 func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgHandle ziface.IMsgHandle) *Connection {
 	c := &Connection{
 		TcpServer:  server,
@@ -51,6 +58,7 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgH
 		MsgHandler: msgHandle,
 		msgChan:    make(chan []byte),
 		ExitChan:   make(chan bool, 1),
+		property:   make(map[string]interface{}),
 	}
 
 	//将conn加入ConnManager中
@@ -59,7 +67,7 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgH
 	return c
 }
 
-//链接的读业务方法
+// 链接的读业务方法
 func (c *Connection) StartReader() {
 	log.Println(" [Reader Goroutine is running...]")
 	defer log.Println("[Reader is exit!] connID= ", c.ConnID, ", remote add is ", c.RemoteAddr().String())
@@ -130,7 +138,7 @@ func (c *Connection) StartReader() {
 	}
 }
 
-//写消息协程，发送消息客户端模块
+// 写消息协程，发送消息客户端模块
 func (c *Connection) StartWriter() {
 	log.Println("[Writer Goroutine is running...]")
 	defer log.Printf("%s [conn Writer exit!]", c.RemoteAddr().String())
@@ -199,7 +207,7 @@ func (c *Connection) RemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
 }
 
-//提供一个SendMsg方法，将发送给客户端的数据进行封包，再发送
+// 提供一个SendMsg方法，将发送给客户端的数据进行封包，再发送
 func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 	if c.isClose {
 		return errors.New("Connection closed when send msg")
@@ -224,4 +232,30 @@ func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 	c.msgChan <- binaryMsg
 
 	return nil
+}
+
+// 设置、获取、移除链接属性
+func (c *Connection) SetProperty(key string, value interface{}) {
+	c.propertyLock.Lock()
+	defer c.propertyLock.Unlock()
+
+	c.property[key] = value
+}
+
+func (c *Connection) GetProperty(key string) (interface{}, error) {
+	c.propertyLock.RLock()
+	defer c.propertyLock.RUnlock()
+
+	if value, ok := c.property[key]; ok {
+		return value, nil
+	}
+
+	return nil, errors.New("no property found")
+}
+
+func (c *Connection) RemoveProperty(key string) {
+	c.propertyLock.Lock()
+	defer c.propertyLock.Unlock()
+
+	delete(c.property, key)
 }
