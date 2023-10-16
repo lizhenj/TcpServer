@@ -86,7 +86,7 @@ func (c *Connection) StartReader() {
 		dp := NewDataPack()
 		//读取客户端的Msg Head 二级制流 8个字节，
 		headData := make([]byte, dp.GetHeadLen())
-		_, err := io.ReadFull(c.GetTCPConnection(), headData)
+		_, err := io.ReadFull(c.Conn, headData)
 		if err != nil {
 			log.Println("read msg head error:", err)
 			break
@@ -103,7 +103,7 @@ func (c *Connection) StartReader() {
 		var data []byte
 		if msg.GetMsgLen() > 0 {
 			data = make([]byte, msg.GetMsgLen())
-			if _, err := io.ReadFull(c.GetTCPConnection(), data); err != nil {
+			if _, err := io.ReadFull(c.Conn, data); err != nil {
 				log.Println("read msg data error:", err)
 				break
 			}

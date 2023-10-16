@@ -3,7 +3,9 @@ package utils
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"zinx/ziface"
+	"zinx/zlog"
 )
 
 /*
@@ -28,6 +30,18 @@ type GlobalObj struct {
 	MaxPackageSize   uint32 //当前框架数据包的最大值
 	WorkerPoolSize   uint32 //当前业务工作池的Goroutine数量
 	MaxWorkerTaskLen uint32 //框架允许的开辟worker最大数量
+
+	/*
+	  config file path
+	*/
+	ConfFilePath string
+
+	/*
+	  logger
+	*/
+	LogDir        string //日志所在文件夹 默认“./log”
+	LogFile       string //日志文件名称 默认“” --如果没有设置日志文件，打印信息将打印之stderr
+	LogDebugClose bool   //是否关闭Debug日志级别调试信息 默认false --默认打开debug信息
 }
 
 /*
@@ -35,16 +49,42 @@ type GlobalObj struct {
 */
 var GlobalObject *GlobalObj
 
+//判断一个文件是否存在
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
+//读取用户的配置文件
 func (g *GlobalObj) Reload() {
-	data, err := ioutil.ReadFile("D:/Study/go-work/src/myDemo/ZinxV0.1/conf/zinx.json")
+
+	if confFileExists, _ := PathExists(g.ConfFilePath); confFileExists != true {
+		return
+	}
+
+	data, err := ioutil.ReadFile(g.ConfFilePath)
 	if err != nil {
 		panic(err)
 	}
 
 	//将json文件数据解析到struct
-	err = json.Unmarshal(data, &GlobalObject)
+	err = json.Unmarshal(data, g)
 	if err != nil {
 		panic(err)
+	}
+
+	//Logger 设置
+	if g.LogFile != "" {
+		zlog.SetLogFile(g.LogDir, g.LogFile)
+	}
+	if g.LogDebugClose == true {
+		zlog.CloseDebug()
 	}
 }
 
@@ -60,8 +100,11 @@ func init() {
 		Host:             "0.0.0.0",
 		MaxConn:          1000,
 		MaxPackageSize:   4096,
+		ConfFilePath:     "D:/Study/go-work/src/myDemo/ZinxV0.1/conf/zinx.json",
 		WorkerPoolSize:   10,
 		MaxWorkerTaskLen: 1024,
+		LogDir:           "./log",
+		LogFile:          "",
 	}
 
 	//从用户自定义参数文件，加载配置

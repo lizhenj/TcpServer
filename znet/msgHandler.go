@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"zinx/utils"
 	"zinx/ziface"
+	"zinx/zlog"
 )
 
 /*
@@ -66,7 +67,7 @@ func (mh *MsgHandle) StartWorkerPool() {
 
 //启动一个Worker工作流程
 func (mh *MsgHandle) StartOneWorker(workerID int, taskQueue chan ziface.IRequest) {
-	log.Printf("Worker ID=%d is started...", workerID)
+	zlog.Infof("Worker ID=%d is started...", workerID)
 
 	//不断的阻塞等待对应消息队列的消息,并进行处理
 	for {
