@@ -1,0 +1,4 @@
+<MODULE>2023/10/15/02:17:05 [DEBUG]stdzlog.go:52: ===> zinx debug content ~~666
+<MODULE>2023/10/15/02:17:05 [DEBUG]stdzlog.go:52: ===> zinx debug content ~~888
+<MODULE>2023/10/15/02:17:05 [ERROR]stdzlog.go:79: ===> zinx Error!!!! ~~~555~~~
+<MODULE>2023/10/15/02:17:05 [ERROR]stdzlog.go:79: ---> zinx error after debug close ！！！
